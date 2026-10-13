@@ -63,6 +63,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible,textarea:focus-vi
 .hl{display:grid;gap:2px;min-width:0}
 .hl .row{gap:8px}
 .vbox{position:relative;width:112px;aspect-ratio:1;max-width:100%;border-radius:12px;overflow:hidden;background:#101318;border:0;padding:0;display:grid;place-items:center;color:#fff}
+a.vbox{text-decoration:none}
 .vbox img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;max-width:none}
 .play{position:relative;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.88);display:grid;place-items:center;color:#14202E;padding-left:3px}
 .vbox small{position:absolute;left:0;right:0;bottom:7px;text-align:center;font-size:11px;font-weight:600;color:#fff}
@@ -420,26 +421,35 @@ function load(){try{const r=localStorage.getItem('ficha.v1');return r?JSON.parse
 function save(){try{localStorage.setItem('ficha.v1',JSON.stringify(S))}catch(e){}}
 const UI={bk:'',bkin:'',confirm:false,play:null};
 /* vídeos: o canal escolhido + vídeos ligados a cada exercício (começam aos 7 s para pular a introdução) */
-const CHANNEL='https://www.youtube.com/@worldfitnessONL';
-const VIDEO_START=7;
-const VIDEOS={};
-const vidOf=id=>S.videos[id]||VIDEOS[id]||null;
-const chanSearch=e=>CHANNEL+'/search?query='+encodeURIComponent(e.n);
+const VIDEO_START=0;
+/* um vídeo de execução por exercício (IDs do YouTube encontrados na busca) */
+const VIDEOS={sq1:'rM6SDUdl9fs',sq3:'waAxlYvtCcI',sq2:'ge1vdJRP0UA',sq5:'Whp712OHPl8',sq4:'mhu6HkDYvlw',sq6:'yfMU4Kvk0y4',sq8:'BMtzYcwzT58',sq7:'CaTbpJH49i4',
+ hi1:'jSomWOwLiGE',hi2:'XlGjQYUN4RQ',hi3:'dq86IKEdagg',hi5:'mm7v2-cnoR0',hi4:'kBah9-n7A3w',hi8:'VeckpvHeX_8',hi6:'Pj9dbkj9Wsc',hi7:'q1lOEI3wm8M',
+ un1:'qepBcFFMzhM',un2:'MVbD4k74X88',un3:'LCXGqMBlKHs',un5:'7mUtaq3HAIg',un6:'MbxI222HTkg',un7:'46gelZUTHBY',un4:'HAs02Wbolfc',
+ gl1:'kvmT_ZlgVI0',gl2:'9UPvhCLa1IQ',gl6:'50qHGus1TZk',gl5:'KoGf9T179Vg',gl3:'ECbv51lHtq4',gl10:'othUJ1jll9g',gl11:'iQAHZjXkNi8',gl7:'EUcGoq9iXLQ',gl4:'6jS6aH-78w4',gl8:'aRZjdvGJiGQ',gl9:'sCskYelUmTU',
+ qi1:'OoQ9VX6zq0I',qi4:'MzYhQuhcyjE',qi2:'6xKX0yXbZ_s',
+ pi1:'hlK2YvpfAuI',pi2:'E59lnzU_LE4',pi5:'5i3mipgULBg',pi4:'HsyTE_gHpE0',pi3:'rerXyO556So',
+ ca1:'Hsho8B6ZNhE',ca2:'Vp788-iQqiI',ca5:'aPhesY3Z0RI',ca3:'aq98qV4E-WY',ca6:'qTp6CNYiwjc',ca4:'QzCFFo1RyTM',
+ ph2:'fbupGf-T4KM',ph4:'qmSOsrheLEg',ph1:'ZN7SuDQpNMk',ph3:'G-i3jMIbDmo',ph7:'HdI6iAqZC1I',ph8:'GrSsIzmkYwM',ph6:'oTmPth0J55E',ph5:'xgqFpfoQEEs',
+ ch2:'8v3TOJnKYIU',ch1:'DqL31nkLyRQ',ch3:'Ixx_nBb1yqo',ch4:'PrrRU0yLJ3Q',
+ pv1:'V7rw4dRMw2M',pv2:'Q7K6DI9R-A8',pv4:'yhJWRlfpEuk',pv3:'F9z8uKTnQNU',pv5:'kjVYH4k5wDU',pv6:'uIFB8ZsBOF4',pv7:'6UIUcMPgom8',pv8:'TQH6U_hfS3Y',
+ pu1:'7cCiQUdIXWw',pu6:'NpZALisqrE8',pu3:'zSuNm2EVaL8',pu2:'oH-NrOccUOg',pu5:'3uIW1Wmc2_I',pu4:'NYfYY3rZR3w',
+ rh3:'f8AVh4VBbos',rh2:'WrF-rpwax4k',rh4:'vFKHJs3t3Dw',rh1:'mxvS-iwm53o',rh8:'3eDGGszO63c',rh7:'nESk8_r4WB4',rh6:'UYSAjUGcZLg',rh5:'prXuzNQL06s',
+ sh1:'ORparUDksUk',sh5:'2gMQFUdda6g',sh2:'CCekl3JkW3w',sh3:'5rOBZhdKmoM',sh6:'jS4Z8nzh9v0',sh7:'HgmuchoLIAY',sh4:'2OhRe-RHrYo',
+ bi1:'P-boCddkUVg',bi4:'D2mghpkuF4M',bi3:'1-xCKLVxqqg',bi2:'V6UEDzY51gY',bi6:'L0BmzChjQV8',bi5:'pwv9fFtmC_0',
+ tr1:'EYE7aOYb8vU',tr2:'osZmauwdWqk',tr8:'b2AP9ils4io',tr3:'-zCw46DgI5M',tr7:'99gVAsqhZXY',tr4:'qAKB1H2kz2g',tr5:'XDr7qoxL1yg',tr6:'RS9qlb7Fl1U',
+ co1:'thZZtS9gapk',co2:'c4yjTN9uKRY',co4:'0loS0bRNqfs',co5:'91zJZhRx2u0',co3:'UL2xb7V9ELU',co7:'GLH6RqeeIYI',co6:'zt7PjySXWCw',co8:'pIaXc4aH1VY'};
+const vidOf=id=>VIDEOS[id]||null;
+const ytSearch=e=>'https://www.youtube.com/results?search_query='+encodeURIComponent('como fazer '+e.n+' execução');
 function parseYT(s){s=(s||'').trim();const m=s.match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([\w-]{11})/);return m?m[1]:/^[\w-]{11}$/.test(s)?s:null}
 const PLAYB='<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
 function vbox(e){const v=vidOf(e.id);
   return v?`<button class="vbox" data-act="play" data-id="${e.id}" aria-label="Assistir vídeo de ${e.n}"><img src="https://i.ytimg.com/vi/${v}/hqdefault.jpg" alt="" loading="lazy"><span class="play">${PLAYB}</span></button>`
-  :`<button class="vbox" data-act="vlink" data-id="${e.id}" aria-label="Escolher vídeo de ${e.n}"><span class="play">${PLAYB}</span><small>Escolher vídeo</small></button>`}
+  :`<a class="vbox" href="${ytSearch(e)}" target="_blank" rel="noopener" aria-label="Ver vídeos de ${e.n} no YouTube"><span class="play">${PLAYB}</span><small>Ver no YouTube</small></a>`}
 function player(e){const v=vidOf(e.id);
   return `<div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${v}?start=${VIDEO_START}&autoplay=1&playsinline=1&rel=0" title="Vídeo: ${e.n}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>
   <div class="actions"><button class="btn ghost" data-act="stopplay">Fechar vídeo</button><a class="btn ghost" href="https://youtu.be/${v}?t=${VIDEO_START}" target="_blank" rel="noopener">Abrir no YouTube</a></div>`}
-function openVideo(id){const e=EXM[id],v=vidOf(id);
-  SH.innerHTML=`<div class="panel" role="dialog" aria-label="Vídeo do exercício"><div class="eyebrow">Vídeo do exercício</div><h2>${e.n}</h2>
-   <ol class="steps"><li>Toque em <b>Buscar no canal</b> e abra o vídeo certo.</li><li>No YouTube, toque em Compartilhar e depois em Copiar link.</li><li>Volte aqui, cole o link e toque em Salvar.</li></ol>
-   <a class="btn" href="${chanSearch(e)}" target="_blank" rel="noopener">${PLAY}Buscar no canal</a>
-   <input class="wide" type="text" id="vurl" placeholder="Cole aqui o link do vídeo" autocomplete="off" value="${v?'https://youtu.be/'+v:''}" aria-label="Link do vídeo">
-   <div class="panelfoot">${S.videos[id]?`<button class="btn" data-act="vdel" data-id="${id}">Remover vídeo</button>`:'<span></span>'}<button class="btn primary" data-act="vsave" data-id="${id}">Salvar</button></div></div>`;
-  SH.hidden=false}
+
 
 const have=()=>new Set(S.profile.equip);
 function blocked(){const b=new Set();S.profile.restr.forEach(r=>RISK[r].split(' ').forEach(x=>b.add(x)));return b}
@@ -550,7 +560,7 @@ function card(id,i){
     ${prev}
     ${!timed&&uni?`<div class="loadrow"><span class="h">Carga${e.eq?'':' extra'} · todas as séries</span>${stepper(id,'u',sets[0].k,kPh(id,0,e),'Carga do exercício em kg')}<span class="meta">kg</span></div>`:''}
     <div class="setgrid${timed?' t':uni?' u':''}">${timed?'':uni?`<span></span><span class="h">${r.side?'reps/lado':'reps'}</span><span></span>`:`<span></span><span class="h">kg${e.eq?'':' extra'}</span><span class="h">${r.side?'reps/lado':'reps'}</span><span></span>`}${rows}</div>
-    <div class="actions"><button class="btn" data-act="swap" data-i="${i}">${SWAP}Trocar</button><button class="btn" data-act="vlink" data-id="${id}">${PLAY}${vidOf(id)?'Trocar vídeo':'Escolher vídeo'}</button></div></article>`;
+    <div class="actions"><button class="btn" data-act="swap" data-i="${i}">${SWAP}Trocar</button></div></article>`;
 }
 function editList(d){
   return d.items.map((id,i)=>{const e=EXM[id];return `<article class="card"><div class="top"><div class="num">${String(i+1).padStart(2,'0')}</div>
@@ -735,10 +745,6 @@ document.addEventListener('click',ev=>{
       break}
     case'play':UI.play=b.dataset.id;break;
     case'stopplay':UI.play=null;break;
-    case'vlink':openVideo(b.dataset.id);return;
-    case'vsave':{const v=parseYT($('#vurl').value);if(!v){toast('Esse link não parece ser de um vídeo do YouTube');return}
-      S.videos[b.dataset.id]=v;UI.play=null;SH.hidden=true;toast('Vídeo salvo');break}
-    case'vdel':delete S.videos[b.dataset.id];UI.play=null;SH.hidden=true;break;
     case'kstep':{const id=b.dataset.id,n=b.dataset.n==='u'?'u':+b.dataset.n,a=setsOf(id,S.day),i=n==='u'?0:n;
       let base=num(a[i].k);if(base==null){const p=phKg(id,i);base=p===''?0:+p}
       setK(id,n,fmtKg(Math.max(0,base+(+b.dataset.d))));break}
