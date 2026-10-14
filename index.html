@@ -260,6 +260,19 @@ const MO={sq3:'Quadríceps e glúteos',sq6:'Glúteos, adutores e quadríceps',hi
 const musc=e=>MO[e.id]||MP[e.p];
 const RESTR=[['joelho','Joelho'],['lombar','Lombar'],['ombro','Ombro'],['punho','Punho']];
 const RINFO={joelho:'o joelho',lombar:'a lombar',ombro:'o ombro',punho:'o punho'};
+const GINFO={hipertrofia:'Foco em ganhar músculo: carga moderada, repetições médias e descanso médio.',
+ forca:'Foco em levantar mais peso: carga alta, poucas repetições e descanso longo. O treino fica mais demorado.',
+ definicao:'Foco em gastar mais energia: carga mais leve, mais repetições e descanso curto. O treino fica mais rápido e cansativo.',
+ resistencia:'Foco em fôlego: carga leve, muitas repetições e descanso bem curto.'};
+function goalInfo(){
+  const pr=S.profile,c=rx({p:'SQ',f:'',id:'_'}),i=rx({p:'BI',f:'',id:'_'}),lv=LEVELS.find(l=>l[0]===pr.level)[1].toLowerCase();
+  const intv=pr.level!=='iniciante'&&(pr.goal==='definicao'||pr.goal==='resistencia');
+  return `<div class="rinfo"><p><b>O que muda:</b> ${GINFO[pr.goal]}</p><p>Para quem é ${lv}: exercícios principais (agachamento, supino, remada…) com <b>${c.s} séries de ${c.r} repetições</b> e ${fmtRest(c.rest)} de descanso. Exercícios isolados (cadeira extensora, rosca, elevação lateral…) com <b>${i.s} × ${i.r}</b> e ${fmtRest(i.rest)} de descanso.</p><p>Cardio do fim: ${intv?'alterna entre contínuo e intervalado.':'sempre contínuo e moderado.'}${pr.goal==='definicao'||pr.goal==='resistencia'?'':''}</p></div>`;
+}
+const LINFO={iniciante:['5 exercícios por treino','uma série a menos em todos os exercícios (mínimo de 2)','na força, 6 a 8 repetições nos principais em vez de 4 a 6','prancha de 20 a 30 s','cardio sempre contínuo, sem intervalado'],
+ intermediario:['6 exercícios por treino','séries completas do objetivo','prancha de 30 a 45 s','cardio intervalado liberado nos objetivos definição e resistência'],
+ avancado:['6 exercícios por treino','uma série a mais nos exercícios principais (até 5)','prancha de 45 a 60 s','cardio intervalado liberado nos objetivos definição e resistência']};
+function levelInfo(){const l=S.profile.level;return `<div class="rinfo"><p><b>O que muda:</b> ${LINFO[l].join('; ')}.</p>${l==='iniciante'?'<p>Comece com cargas leves e foque em aprender o movimento. Os vídeos de cada exercício ajudam.</p>':''}</div>`}
 function restrInfo(r){
   const ids=RISK[r].split(' '),names=ids.map(id=>EXM[id].n),lw=names.slice(0,3).map(n=>n.charAt(0).toLowerCase()+n.slice(1)),ex=lw.slice(0,-1).join(', ')+' e '+lw[lw.length-1];
   let t=`Saem da ficha ${ids.length} exercícios que costumam forçar ${RINFO[r]}, como ${ex}. O app coloca no lugar outros que trabalham o mesmo músculo.`;
@@ -760,9 +773,9 @@ function ajustes(){
     ${list.map(e=>`<button class="exrow" data-act="ban" data-id="${e.id}" aria-pressed="${ex.includes(e.id)}"><span class="box">${ex.includes(e.id)?CHECKS:''}</span><span class="t">${e.n}<br><small>${bl.has(e.id)?'Fora da ficha por cuidado com o corpo':eqLabel(e)}</small></span></button>`).join('')}</details>`}).join('');
   return `<header class="brand"><div class="who"><img class="avatar" src="${AVATAR}" alt="" width="48" height="48"><h1>Meu <b>perfil</b></h1></div>${themeBtn()}</header>
   <p class="hint">Qualquer mudança nas seções abaixo monta a ficha de novo na hora.</p>
-  <section class="sec"><h3>Nome</h3><input class="wide" type="text" id="nome" placeholder="Como ela quer ser chamada" value="${esc(pr.name)}" maxlength="24" autocomplete="off"></section>
-  <section class="sec"><h3>Objetivo</h3>${opts('goal',GOALS,pr.goal)}</section>
-  <section class="sec"><h3>Experiência na academia</h3>${opts('level',LEVELS,pr.level)}</section>
+  <section class="sec"><h3>Como você prefere ser chamada?</h3><input class="wide" type="text" id="nome" placeholder="Seu nome ou apelido" value="${esc(pr.name)}" maxlength="24" autocomplete="off"></section>
+  <section class="sec"><h3>Objetivo</h3>${opts('goal',GOALS,pr.goal)}${goalInfo()}</section>
+  <section class="sec"><h3>Experiência na academia</h3>${opts('level',LEVELS,pr.level)}${levelInfo()}</section>
   <section class="sec"><h3>Dias em que vou treinar</h3><p class="hint">Escolha de 2 a 6 dias. O app distribui os treinos e evita pernas pesadas em dias seguidos.</p>
     <div class="daysel w7">${WD.map((n,w)=>`<button data-act="wday" data-v="${w}" aria-pressed="${pr.wdays.includes(w)}" aria-label="${WDL[w]}">${n}</button>`).join('')}</div>
     <ul class="wdlist">${pr.wdays.map((w,i)=>`<li><b>${WDL[w]}:</b> Treino ${L(i)} · ${TPL[S.plan.days[i].k][0]}</li>`).join('')}</ul></section>
