@@ -57,6 +57,11 @@ button:focus-visible,input:focus-visible,summary:focus-visible,textarea:focus-vi
 .cramp{font-size:13px;color:var(--muted);font-style:italic}
 .wdlist{display:grid;gap:4px;margin:0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
 .wdlist b{color:var(--ink)}
+.titlerow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.titlerow h2{min-width:0}
+.btn.sm{padding:5px 12px;font-size:13px}
+.alt.cur{border-color:var(--accent);background:var(--accent-soft)}
+.wdlist .link{padding:0 4px;font-size:12px}
 .donebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .story{display:block;width:min(100%,300px);max-width:100%;aspect-ratio:9/16;margin:0 auto;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.25);-webkit-touch-callout:default}
 .story.free{aspect-ratio:auto;height:auto;box-shadow:none;border-radius:0}
@@ -467,7 +472,7 @@ const PLAY='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" 
 
 /* ---------- estado ---------- */
 function defaults(){return{v:2,seed:0,view:'treino',day:0,open:[],log:{},sessions:[],body:[],cur:{},curDate:{},edit:false,cal:0,metric:'peso',
-  profile:{name:'',goal:'hipertrofia',level:'iniciante',days:3,focus:'pe',equip:['halteres','barra','banco','maquinas','polia','elastico'],cardio:['esteira','bike','eliptico'],excluded:['un1'],restr:[],loadMode:'unica',wdays:[0,2,4],theme:'auto',warmPre:'dinamico',mobPost:true,period:null},videos:{}}}
+  profile:{name:'',goal:'hipertrofia',level:'iniciante',days:3,focus:'pe',equip:['halteres','barra','banco','maquinas','polia','elastico'],cardio:['esteira','bike','eliptico'],excluded:['un1'],restr:[],loadMode:'unica',wdays:[0,2,4],dtype:{},theme:'auto',warmPre:'dinamico',mobPost:true,period:null},videos:{}}}
 function migrate(o){const d=defaults();
   if(o.profile&&!o.profile.wdays&&WEEK[o.profile.days])o.profile.wdays=WEEK[o.profile.days].map(n=>WD.indexOf(n));
   if(o.profile&&o.profile.warm&&o.profile.warmPre===undefined){const w=o.profile.warm;o.profile.warmPre=w==='mobilidade'?'nenhum':'dinamico';o.profile.mobPost=w!=='dinamico';delete o.profile.warm}
@@ -528,13 +533,15 @@ function syncDay(){if(S.selDate!==today()){S.sel=todayWd();S.selDate=today()}con
 function nextTrain(from){const w=S.profile.wdays;for(let k=1;k<=7;k++){const d=(from+k)%7;if(w.includes(d))return d}return w[0]}
 const periodOn=()=>{const p=S.profile.period;return !!p&&today()<addDays(p,5)};
 const periodAdj=()=>periodOn()&&S.periodSkip!==today();
+function dayItems(k,counts){const used=new Set(),items=[],max=S.profile.level==='iniciante'?5:6;
+  for(const p of TPL[k][1]){if(items.length>=max)break;const c=pool(p,used);if(!c.length)continue;
+    const n=counts[p]||0;counts[p]=n+1;const ex=c[(n+S.seed)%c.length];used.add(ex.id);items.push(ex.id)}
+  return items}
+const autoKeys=()=>arrange(SPLIT[S.profile.wdays.length][S.profile.focus],S.profile.wdays);
 function build(){
-  const pr=S.profile;pr.days=pr.wdays.length;
-  const keys=arrange(SPLIT[pr.days][pr.focus],pr.wdays),counts={},max=pr.level==='iniciante'?5:6;
-  S.plan={days:keys.map(k=>{const used=new Set(),items=[];
-    for(const p of TPL[k][1]){if(items.length>=max)break;const c=pool(p,used);if(!c.length)continue;
-      const n=counts[p]||0;counts[p]=n+1;const ex=c[(n+S.seed)%c.length];used.add(ex.id);items.push(ex.id)}
-    return{k,items}})};
+  const pr=S.profile;pr.days=pr.wdays.length;pr.dtype=pr.dtype||{};
+  const keys=autoKeys().map((k,i)=>pr.dtype[pr.wdays[i]]||k),counts={};
+  S.plan={days:keys.map(k=>({k,items:dayItems(k,counts)}))};
   S.cur={};S.curDate={};S.edit=false;S.planStart=today();S.rotSnooze=null;if(S.day>=keys.length)S.day=0;
 }
 function rx(e){const g=S.profile.goal,l=S.profile.level,side=e.p==='UNI'||e.f.includes('u');
@@ -649,7 +656,7 @@ function treino(){
   ${periodBanner()}
   ${weekStrip()}
   <section class="dayhead"><div class="eyebrow">Treino ${L(S.day)} · ${WDL[w]}${w===todayWd()?' (hoje)':''}</div>
-    <h2>${TPL[d.k][0]}</h2>
+    <div class="titlerow"><h2>${TPL[d.k][0]}</h2><button class="btn ghost sm" data-act="dtype" data-i="${S.day}">Trocar tipo</button></div>
     <div class="row meta"><span>${d.items.length} exercícios</span><span>≈ ${dur(d)} min + 30 de cardio</span><span>${dn} de ${tot} séries</span></div>
     <div class="progress"><i style="width:${tot?dn/tot*100:0}%"></i></div>
     <div class="row"><button class="btn${S.edit?' primary':''}" data-act="edit">${S.edit?'Concluir edição':'Editar ficha'}</button>${S.edit?'':`<button class="btn ghost" data-act="variar">${SWAP}Variar exercícios</button>`}</div></section>
@@ -778,7 +785,7 @@ function ajustes(){
   <section class="sec"><h3>Experiência na academia</h3>${opts('level',LEVELS,pr.level)}${levelInfo()}</section>
   <section class="sec"><h3>Dias em que vou treinar</h3><p class="hint">Escolha de 2 a 6 dias. O app distribui os treinos e evita pernas pesadas em dias seguidos.</p>
     <div class="daysel w7">${WD.map((n,w)=>`<button data-act="wday" data-v="${w}" aria-pressed="${pr.wdays.includes(w)}" aria-label="${WDL[w]}">${n}</button>`).join('')}</div>
-    <ul class="wdlist">${pr.wdays.map((w,i)=>`<li><b>${WDL[w]}:</b> Treino ${L(i)} · ${TPL[S.plan.days[i].k][0]}</li>`).join('')}</ul></section>
+    <ul class="wdlist">${pr.wdays.map((w,i)=>`<li><b>${WDL[w]}:</b> Treino ${L(i)} · ${TPL[S.plan.days[i].k][0]}${pr.dtype&&pr.dtype[w]?' (escolhido por você)':''} <button class="link" data-act="dtype" data-i="${i}">trocar</button></li>`).join('')}</ul></section>
   <section class="sec"><h3>Foco</h3>${opts('focus',FOCUS,pr.focus)}</section>
   <section class="sec"><h3>Antes dos exercícios</h3>${opts('wpre',[['dinamico','Aquecimento dinâmico','Polichinelo, agachamento sem peso, círculos de braço'],['mobilidade','Mobilidade','Alongamentos curtos de 15 a 20 s'],['nenhum','Nenhum','Começar direto pelos exercícios']],pr.warmPre)}</section>
   <section class="sec"><h3>Depois dos exercícios, antes do cardio</h3>${opts('wpost',[['sim','Mobilidade','Alongamentos de 20 a 30 s'],['nao','Nenhum','Ir direto para o cardio']],pr.mobPost?'sim':'nao')}<p class="hint">Ordem do treino: aquecimento ou mobilidade, exercícios, mobilidade e cardio.</p></section>
@@ -819,6 +826,28 @@ function addList(q){
   const list=EX.filter(e=>ok(e,h)&&!S.profile.excluded.includes(e.id)&&!bl.has(e.id)&&!inDay.has(e.id)&&(!n||norm(e.n+' '+musc(e)+' '+P[e.p]).includes(n)));
   if(!list.length)return'<p class="hint">Nada encontrado com os seus equipamentos.</p>';
   return Object.keys(P).map(p=>{const l=list.filter(e=>e.p===p);return l.length?`<div class="eyebrow">${P[p]}</div>${l.map(e=>`<button class="alt" data-act="add" data-id="${e.id}"><b>${e.n}</b><span>${musc(e)} · ${eqLabel(e)}</span></button>`).join('')}`:''}).join('');
+}
+const DTYPES=[['LA','Pernas, foco em quadríceps'],['LB','Glúteos e posterior de coxa'],['GL','Glúteos'],['UA','Superiores'],['PS','Peito, ombros e tríceps'],['PL','Costas e bíceps'],['SA','Ombros e braços'],['FA','Corpo inteiro']];
+const fam=k=>k==='UB'?'UA':k==='FB'||k==='FC'?'FA':k;
+function openDtype(i){
+  const d=S.plan.days[i],w=S.profile.wdays[i],cur=fam(d.k),auto=!(S.profile.dtype&&S.profile.dtype[w]);
+  const desc=k=>[...new Set(TPL[k][1].map(p=>P[p]))].join(', ');
+  SH.innerHTML=`<div class="panel" role="dialog" aria-label="Tipo do treino"><div class="eyebrow">${WDL[w]}</div><h2>Tipo do Treino ${L(i)}</h2>
+   <p class="hint">O dia é montado de novo com exercícios desse tipo. As cargas registradas continuam salvas.</p>
+   <div class="altlist"><button class="alt${auto?' cur':''}" data-act="dpick" data-i="${i}" data-v="auto"><b>${auto?'✓ ':''}Automático</b><span>O app escolhe pelo seu foco: ${TPL[autoKeys()[i]][0]}</span></button>
+   ${DTYPES.map(([k,n])=>{const on=!auto&&cur===k;return `<button class="alt${on?' cur':''}" data-act="dpick" data-i="${i}" data-v="${k}"><b>${on?'✓ ':''}${n}</b><span>${desc(k)}</span></button>`}).join('')}</div>
+   <div class="panelfoot"><span></span><button class="btn primary" data-act="close">Fechar</button></div></div>`;
+  SH.hidden=false;
+}
+function setDtype(i,v){
+  const pr=S.profile,w=pr.wdays[i];pr.dtype=pr.dtype||{};
+  let k;if(v==='auto'){delete pr.dtype[w];k=autoKeys()[i]}
+  else{k=v;const others=S.plan.days.filter((_,j)=>j!==i).map(d=>d.k);
+    if(k==='UA'&&others.includes('UA'))k='UB';
+    if(k==='FA'&&others.includes('FA'))k=others.includes('FB')?'FC':'FB';
+    pr.dtype[w]=k}
+  const counts={};S.plan.days.forEach((d,j)=>{if(j!==i)TPL[d.k][1].forEach(p=>counts[p]=(counts[p]||0)+1)});
+  S.plan.days[i]={k,items:dayItems(k,counts)};S.cur[i]={};S.curDate[i]=today();
 }
 function openAdd(){
   SH.innerHTML=`<div class="panel" role="dialog" aria-label="Adicionar exercício"><h2>Adicionar exercício</h2>
@@ -966,6 +995,8 @@ document.addEventListener('click',ev=>{
     case'up':case'down':{const i=+b.dataset.i,j=a==='up'?i-1:i+1;if(j<0||j>=d.items.length)return;[d.items[i],d.items[j]]=[d.items[j],d.items[i]];break}
     case'rm':d.items.splice(+b.dataset.i,1);break;
     case'addopen':openAdd();return;
+    case'dtype':openDtype(+b.dataset.i);return;
+    case'dpick':setDtype(+b.dataset.i,v);SH.hidden=true;toast('Treino '+L(+b.dataset.i)+' atualizado');break;
     case'add':d.items.push(b.dataset.id);SH.hidden=true;toast('Exercício adicionado');break;
     case'swap':openSwap(+b.dataset.i);return;
     case'pick':{const i=+b.dataset.i,old=d.items[i];d.items[i]=b.dataset.id;delete dayCur(S.day)[old];SH.hidden=true;break}
